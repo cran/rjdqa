@@ -4,9 +4,15 @@
 \alias{plot.sa_dashboard}
 \title{Plot a seasonal adjustment dashboard}
 \usage{
-\method{plot}{sa_dashboard}(x, main = "Seasonal Adjustment Dashboard",
-  subtitle = "", raw_color = "#33A02C", sa_color = "#E31A1C",
-  trend_color = "black", ...)
+\method{plot}{sa_dashboard}(
+  x,
+  main = "Seasonal Adjustment Dashboard",
+  subtitle = "",
+  raw_color = "#33A02C",
+  sa_color = "#E31A1C",
+  trend_color = "black",
+  ...
+)
 }
 \arguments{
 \item{x}{a \code{"sa_dashboard"} object.}
@@ -45,7 +51,8 @@ The dashboard is divided into four sections:
 }
 }
 \examples{
-sa_model <- RJDemetra::x13(RJDemetra::ipi_c_eu[, "FR"], "RSA5c")
+data <- window(RJDemetra::ipi_c_eu[, "FR"], start = 2003)
+sa_model <- RJDemetra::x13(data, "RSA5c")
 dashboard_data <- sa_dashboard(sa_model)
 plot(dashboard_data, main = "My first seasonal adjustment dashboard",
      subtitle = "SA with X13")

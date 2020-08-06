@@ -16,8 +16,8 @@ downloads](http://cranlogs.r-pkg.org/badges/grand-total/rjdqa?color=lightgrey)](
 ## Overview
 
 rjdqa is an extension of the R package
-[RJDemetra](https://github.com/nbbrd/rjdemetra), which is an interface
-to JDemetra+, the seasonal adjustment software [officially
+[RJDemetra](https://github.com/jdemetra/rjdemetra), which is an
+interface to JDemetra+, the seasonal adjustment software [officially
 recommended](https://ec.europa.eu/eurostat/cros/system/files/Jdemetra_%20release.pdf)
 to the members of the ESS and the European System of Central Banks. The
 rjdqa package provides help to the quality assessment by producing:
@@ -34,12 +34,18 @@ rjdqa package provides help to the quality assessment by producing:
 
 rjdqa relies on RJDemetra that requires Java SE 8 or later version.
 
-You can install rjdqa from github with:
-
 ``` r
+# Install release version from CRAN
+install.packages("rjdqa")
+
+# Install development version from GitHub
 # install.packages("devtools")
-devtools::install_github("AQLT/rjdqa", args = "--no-multiarch")
+devtools::install_github("AQLT/rjdqa")
 ```
+
+If you have troubles with the installation of RJDemetra or rjdqa, check
+the [installation
+manual](https://github.com/jdemetra/rjdemetra/wiki/Installation-manual).
 
 # Usage
 
