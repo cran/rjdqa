@@ -1,6 +1,6 @@
-#' Compute data for a seasonal adjustment dashboard
+#' Compute data for the Statistics Canada seasonal adjustment dashboard
 #' 
-#' Function to compute the data to produce a seasonal adjustment dashboard
+#' Function to compute the data to produce the Statistics Canada seasonal adjustment dashboard
 #' 
 #' @param x a seasonal adjustment model made by 'RJDemetra' (object of class \code{"SA"}).
 #' @param n_recent_obs number of observation in the recent history panel (see details). By default \code{n_recent_obs = 24} (last 2 years for monthly data).
@@ -13,10 +13,10 @@
 #' \item Recent History (top left panel): plot of the raw series, the seasonal adjusted series and the trend for the most recent periods (\code{n_recent_obs} last observations: 24 by default).  It is intended to identify trend direction, overall volatility and obvious outliers.
 #' \item Summary of Key Diagnostics (top right panel): 
 #' \itemize{
-#' \item Adjustability (only for X13 models): M7 statistic. Colors: red if M7 > 1.75, yellow if 1.25 < M7 < 1.75 and green if M7 < 1.25.
-#' \item Residual seasonality: qs (auto-correlations at seasonal lags) and f (Friedman) test on seasonal adjusted series. Colors: red if p-value < 0.01, yellow if 0.01 < p-value < 0.05 and green if p-value > 0.05.
-#' \item Residual trading-days effects: f (Friedman) test on seasonal adjusted serie.  Colors: red if p-value < 0.01, yellow if 0.01 < p-value < 0.05 and green if p-value > 0.05.
-#' \item Independence of RegARIMA residuals: Ljung-Box test. Colors: red if p-value < 0.01, yellow if 0.01 < p-value < 0.05 and green if p-value > 0.05.
+#' \item Adjustability (only for X13 models): M7 statistic. Colors: red if M7 \eqn{\ge} 1.75, yellow if 1.25 \eqn{\le} M7 < 1.75 and green if M7 < 1.25.
+#' \item Residual seasonality: qs (auto-correlations at seasonal lags) and f (Friedman) test on seasonal adjusted series. Colors: red if p-value \eqn{\le} 0.01, yellow if 0.01 < p-value \eqn{\le} 0.05 and green if p-value > 0.05.
+#' \item Residual trading-days effects: f (Friedman) test on seasonal adjusted serie.  Colors: red if p-value \eqn{\le} 0.01, yellow if 0.01 < p-value \eqn{\le} 0.05 and green if p-value > 0.05.
+#' \item Independence of RegARIMA residuals: Ljung-Box test. Colors: red if p-value \eqn{\le} 0.01, yellow if 0.01 < p-value \eqn{\le} 0.05 and green if p-value > 0.05.
 #' \item Recent outliers on last (t) and penultimate (t-1) observation. Colors: Red if there is an extreme value (only for X13: when table C17 equals to 0), yellow if there is an outlier in the RegARIMA model and green otherwise.
 #' }
 #' \item Estimated Patterns and Anticipated Movements (middle panel): estimated trading day, moving holiday and seasonal pattern.  It presents expected movement in unadjusted series based on the current and previous period.
@@ -31,13 +31,18 @@
 #' @examples
 #' data <- window(RJDemetra::ipi_c_eu[, "FR"], start = 2003)
 #' sa_model <- RJDemetra::x13(data, "RSA5c")
-#' dashboard_data <- sa_dashboard(sa_model)
-#' plot(dashboard_data, main = "My first seasonal adjustment dashboard",
+#' sc_dashboard_data <- sc_dashboard(sa_model)
+#' plot(sc_dashboard_data, main = "My first seasonal adjustment dashboard",
 #'      subtitle = "SA with X13")
 #' 
-#' @seealso \code{\link{plot.sa_dashboard}}.
+#' @seealso \code{\link{plot.sc_dashboard}}.
 #' @export
-sa_dashboard <- function(x, n_recent_obs = 24){
+sc_dashboard <- function(x, n_recent_obs = 24){
+    if (inherits(x, "jSA")) {
+        x <- RJDemetra::jSA2R(x, 
+                              userdefined = c("decomposition.c17","preprocessing.model.tde_f",
+                                              "preprocessing.model.mhe_f"))
+    }
     if (inherits(x, "X13") && !all(c("decomposition.c17","preprocessing.model.tde_f",
                                      "preprocessing.model.mhe_f") %in% names(x$user_defined))) {
         my_spec <- RJDemetra::x13_spec(x)
@@ -61,16 +66,30 @@ sa_dashboard <- function(x, n_recent_obs = 24){
          moving_holiday_pattern = moving_holiday_pattern(x),
          seasonal_pattern = seasonal_pattern(x),
          net_effect = net_effect(x), last_date = last_date)
-    class(res) <- c("sa_dashboard")
+    class(res) <- c("sc_dashboard")
     res
 }
-#' Plot a seasonal adjustment dashboard
+
+#' Deprecated functions
+#'
+#' @description
+#' Use [sc_dashboard] instead of [sa_dashboard()].
+#'
+#' @inheritParams sc_dashboard
+#' @export
+#' @name deprecated-rjdqa
+sa_dashboard <- function(x, n_recent_obs = 24){
+    .Deprecated("sc_dashboard")
+    sc_dashboard(x = x, n_recent_obs = n_recent_obs)
+}
+#' Plot a Statistics Canada seasonal adjustment dashboard
 #' 
-#' Function to plot a dashboard of a seasonal adjustment model
+#' Function to plot Statistics Canada dashboard of a seasonal adjustment model.
 #' 
-#' @param x a \code{"sa_dashboard"} object.
+#' @param x a \code{"sc_dashboard"} object.
 #' @param main main title.
 #' @param subtitle subtitle.
+#' @param reference_date boolean indicating if the reference date should be printed.
 #' @param raw_color color for the raw series.
 #' @param sa_color color for the seasonal adjusted series.
 #' @param trend_color color for the trend.
@@ -101,14 +120,15 @@ sa_dashboard <- function(x, n_recent_obs = 24){
 #' @examples
 #' data <- window(RJDemetra::ipi_c_eu[, "FR"], start = 2003)
 #' sa_model <- RJDemetra::x13(data, "RSA5c")
-#' dashboard_data <- sa_dashboard(sa_model)
+#' dashboard_data <- sc_dashboard(sa_model)
 #' plot(dashboard_data, main = "My first seasonal adjustment dashboard",
 #'      subtitle = "SA with X13")
 #' 
-#' @seealso \code{\link{sa_dashboard}}.
+#' @seealso \code{\link{sc_dashboard}}.
 #' @export
-plot.sa_dashboard <- function(x, main = "Seasonal Adjustment Dashboard",
+plot.sc_dashboard <- function(x, main = "Seasonal Adjustment Dashboard",
                               subtitle = "",
+                              reference_date = TRUE,
                               raw_color = "#33A02C",
                               sa_color = "#E31A1C",
                               trend_color = "black", ...){
@@ -197,8 +217,9 @@ plot.sa_dashboard <- function(x, main = "Seasonal Adjustment Dashboard",
     #       outer = TRUE,font = 2)
     # mtext("Seasonal Adjustment Dashboard", side = 3, line = -2,
     #       outer = TRUE,font = 2,cex = 1.2)
-    mtext(sprintf("Reference Month: %s",last_date), side = 3, line = -3, 
-          outer = TRUE,font = 3,cex = 0.7,at = 0.95, adj = 1)
+    if (reference_date)
+        mtext(sprintf("Reference Date: %s",last_date), side = 3, line = -3, 
+              outer = TRUE,font = 3,cex = 0.7,at = 0.95, adj = 1)
     mtext(subtitle, side = 3, line = -3, 
           outer = TRUE,font = 3,cex = 0.7,at = 0.1, adj = 1)
     invisible()
