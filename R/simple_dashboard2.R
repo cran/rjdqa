@@ -1,34 +1,38 @@
 
-#' Compute data for a simple seasonal adjustment
+
+#' @param digits_outliers number of digits used in the table of outliers.
+#' @param columns_outliers informations about outliers that should be printed in the summary table.
+#' Can be either a vector of characters among `c("Estimate", "Std. Error", "T-stat", "Pr(>|t|)")`;
+#' or an vector of integer: `1` corresponding to the estimate coefficient (`"Estimate"`),
+#' `2` corresponding to the standard deviation error (`"Std. Error"`),
+#' `3` corresponding to the t-statistic (`"T-stat"`) or
+#' `4` corresponding to the p-value (`"Pr(>|t|)"`).
+#' By default only the estimate coefficients and the t-statistics are printed 
+#' (`columns_outliers = c("Estimate", "T-stat")`).
+#' @param n_last_outliers number of last outliers to be printed (by default `n_last_outliers = 4`).
 #' 
-#' Functions to compute the data to produce a simple seasonal adjustment dashboard.
-#' `simple_dashboard2()` is a slightly variation of `simple_dashboard()` with smaller description
-#' text to include a table with last outliers.
 #' 
-#' @inheritParams sc_dashboard
-#' @param digits number of digits used in the tables.
-#' @param scale_var_decomp boolean indicating if the variance decomposition table should be rescaled to 100.
-#' @param remove_others_contrib boolean indication if the "Others" contribution (i.e.: the pre-adjustment contribution)
-#' should be removed from the variance decomposition table.
-#' 
-#' @examples
-#' data <- window(RJDemetra::ipi_c_eu[, "FR"], start = 2003)
-#' sa_model <- RJDemetra::jx13(data, "RSA5c")
-#' dashboard_data <- simple_dashboard(sa_model)
-#' plot(dashboard_data, main = "Simple dashboard IPI - FR")
-#' dashboard_data2 <- simple_dashboard2(sa_model)
-#' plot(dashboard_data2, main = "Simple dashboard with outliers IPI - FR")
-#' @seealso \code{\link{plot.sc_dashboard}}.
+#' @rdname simple_dashboard
 #' @export
-simple_dashboard <- function(x, digits = 2,
-                             scale_var_decomp = FALSE,
-                             remove_others_contrib = FALSE) {
+simple_dashboard2 <- function(x, digits = 2,
+                              scale_var_decomp = FALSE,
+                              remove_others_contrib = FALSE,
+                              digits_outliers = digits,
+                              columns_outliers = c("Estimate", "T-stat"),
+                              n_last_outliers = 4) {
     if (inherits(x, "TRAMO_SEATS")) {
         x <- RJDemetra::jtramoseats(RJDemetra::get_ts(x), RJDemetra::tramoseats_spec(x))
     } else if (inherits(x, "X13")) {
         x <- RJDemetra::jx13(RJDemetra::get_ts(x), RJDemetra::x13_spec(x))
     }
     nb_format <- paste0("%.", digits, "f")
+    if (is.numeric(columns_outliers)) {
+        columns_outliers <- c("Estimate", "Std. Error", "T-stat", "Pr(>|t|)")[columns_outliers]
+    } else {
+        columns_outliers <- match.arg(columns_outliers,
+                                      c("Estimate", "Std. Error", "T-stat", "Pr(>|t|)"), 
+                                      several.ok = TRUE)
+    }
     
     # Raw, trend, sa
     data_plot <- RJDemetra::get_indicators(x, c("y", "t", "sa", "y_f", "t_f", "sa_f"))
@@ -40,7 +44,7 @@ simple_dashboard <- function(x, digits = 2,
     # add observed data for plots
     data_plot[which(is.na(data_plot[,"y"]))[1]-1, c("y_f", "t_f", "sa_f")] <-
         data_plot[which(is.na(data_plot[,"y"]))[1]-1, c("y", "t", "sa")]
-
+    
     # Global info on model
     arima_ord <- sprintf("ARIMA(%s)(%s)",
                          paste(unlist(RJDemetra::get_indicators(x, sprintf("preprocessing.arima.%s", c("p", "d", "q")))), collapse = ","),
@@ -50,7 +54,7 @@ simple_dashboard <- function(x, digits = 2,
     is_easter <- (! is.null(nmh)) &&
         (nmh > 0)
     
-    est_span <- sprintf("Estimation span: %s to %s\n%s observations",
+    est_span <- sprintf("Estimation span: %s to %s (%s obs)",
                         RJDemetra::get_indicators(x, "preprocessing.model.espan.start")[[1]],
                         RJDemetra::get_indicators(x, "preprocessing.model.espan.end")[[1]],
                         RJDemetra::get_indicators(x, "preprocessing.model.espan.n")[[1]]
@@ -58,11 +62,11 @@ simple_dashboard <- function(x, digits = 2,
     transform <- ifelse(RJDemetra::get_indicators(x, "preprocessing.model.log")[[1]] == "false",
                         "Series hasn't been transformed",
                         "Series has been log-transformed")
-    tde <- sprintf("%s\n%s",
+    tde <- sprintf("%s, %s",
                    ifelse(ntd==0, "No trading days effect",
                           sprintf("Trading days effect (%s)", ntd)),
-                   ifelse(is_easter, "Easter effect",
-                          "No easter effect"))
+                   ifelse(is_easter, "easter effect",
+                          "no easter effect"))
     # nb outliers
     out <- sprintf("%s detected outliers", RJDemetra::get_indicators(x, "preprocessing.model.nout")[[1]])
     summary_text <- c(est_span, transform, tde, out, arima_ord)
@@ -87,6 +91,7 @@ simple_dashboard <- function(x, digits = 2,
     
     var_decomp <- as.data.frame(t(data.frame(var_decomp*100)))
     var_decomp <- var_decomp
+    
     # Tests on linearised series
     liste_ind_seas <- c("F-test" = "diagnostics.seas-lin-f",
                         "QS-test" = "diagnostics.seas-lin-qs",
@@ -132,9 +137,9 @@ simple_dashboard <- function(x, digits = 2,
     
     
     decomp_stats_color <- c(sapply(qstats, function(x) ifelse(x < 1, "#A0CD63", "red")),
-                         "white",
-                         rep("grey90", ncol(var_decomp)
-                         ))
+                            "white",
+                            rep("grey90", ncol(var_decomp)
+                            ))
     qstats[,] <- lapply(qstats, sprintf, fmt = nb_format)
     var_decomp[,] <- lapply(var_decomp, sprintf, fmt = nb_format)
     
@@ -148,58 +153,65 @@ simple_dashboard <- function(x, digits = 2,
         colnames(decomp_stats)[ncol(qstats)+1] <- "   "
     }
     
+    outliers <- do.call(rbind, RJDemetra::get_indicators(x, sprintf("preprocessing.model.out(%i)", seq_len(n_last_outliers))))
+    outliers_color <- NULL
+    if (!is.null(outliers)) {
+        outliers <- outliers[, columns_outliers, drop = FALSE]
+        outliers <- round(outliers, digits_outliers)
+        outliers <- data.frame(rownames(outliers), 
+                               outliers)
+        colnames(outliers)[1] <- sprintf("Last %i outliers", n_last_outliers)
+        rownames(outliers) <- NULL
+        
+        outliers_color <- 
+            cbind(rep("grey90", nrow(outliers)),
+                  matrix("white", ncol = ncol(outliers) - 1, nrow = nrow(outliers)))
+    }
+    
     res <- list(main_plot = data_plot,
-         siratio_plot = ggdemetra::siratio(x),
-         summary_text = summary_text,
-         decomp_stats = list(table = decomp_stats,
-                                colors = decomp_stats_color),
-         residuals_tests = list(table = all_tests,
-                                colors = color_test),
-         last_date = last_date)
-    class(res) <- c("simple_dashboard")
+                siratio_plot = ggdemetra::siratio(x),
+                summary_text = summary_text,
+                decomp_stats = list(table = decomp_stats,
+                                    colors = decomp_stats_color),
+                residuals_tests = list(table = all_tests,
+                                       colors = color_test),
+                last_date = last_date,
+                outliers = list(table = outliers,
+                                colors = outliers_color))
+    class(res) <- c("simple_dashboard2")
     res
 }
-#' Plot a simple seasonal adjustment dashboard
-#' 
-#' Functions to plot a simple dashboard of a seasonal adjustment model.
-#' 
-#' @inheritParams plot.sc_dashboard 
-#' @param color_series Color of the raw time series, the trend and the seasonally adjusted component.
-#' 
-#' @examples
-#' data <- window(RJDemetra::ipi_c_eu[, "FR"], start = 2003)
-#' sa_model <- RJDemetra::jx13(data, "RSA5c")
-#' dashboard_data <- simple_dashboard(sa_model)
-#' plot(dashboard_data, main = "Simple dashboard IPI - FR")
-#' dashboard_data2 <- simple_dashboard2(sa_model)
-#' plot(dashboard_data2, main = "Simple dashboard with outliers IPI - FR")
-#' @seealso \code{\link{simple_dashboard}}.
+
+#' @rdname plot.simple_dashboard
 #' @export
-plot.simple_dashboard <- function(x, main = "Simple Dashboard",
-                              subtitle = NULL,
-                              color_series = c(y = "#F0B400", t = "#1E6C0B", sa = "#155692"),
-                              reference_date = TRUE, ...){
+plot.simple_dashboard2 <- function(x, main = "Simple Dashboard with outliers",
+                                   subtitle = NULL,
+                                   color_series = c(y = "#F0B400", t = "#1E6C0B", sa = "#155692"),
+                                   reference_date = TRUE,...){
     main_plot = x$main_plot
     siratio_plot = x$siratio_plot
     summary_text = x$summary_text
     decomp_stats = x$decomp_stats
     residuals_tests = x$residuals_tests
     last_date = x$last_date
+    outliers = x$outliers
     
     def.par <- par(no.readonly = TRUE)    
     
     nf <- layout(matrix(c(rep(1,8),
-                          rep(2,4),rep(3,4),
+                          rep(2,4), rep(3,4),
                           rep(4,3), rep(5,5),
-                          rep(4,3), rep(6,5)),ncol = 8,byrow = T),
-                 heights = c(0.2,2.5,0.5,1.3))
+                          rep(4,3), rep(6,5),
+                          rep(7,3), rep(8,5)),ncol = 8,byrow = T),
+                 heights = c(0.2,2.2,0.5,0.2,0.7))
+    # layout.show(nf)
     on.exit({
         par(def.par)
     })
     
     oma.saved <- par("oma")
     par(oma = rep.int(0, 4))
-    par(oma = oma.saved)
+    # par(oma = oma.saved)
     o.par <- par(mar = rep.int(0, 4))
     plot.new()
     box(which = "inner")
@@ -210,26 +222,34 @@ plot.simple_dashboard <- function(x, main = "Simple Dashboard",
     
     par(mai = c(0, 0.4, 0.2, 0.1))
     stats::plot.ts(main_plot,plot.type = "single",
-            col = rep(color_series, 2),
-            lty = rep(c(1,2), each = 3),
-            xlab = NULL,
-            ylab = NULL,
-            main = NULL
-            )
+                   col = rep(color_series, 2),
+                   lty = rep(c(1,2), each = 3),
+                   xlab = NULL,
+                   ylab = NULL,
+                   main = NULL
+    )
     legend("bottomright", legend = names(color_series),
            col = color_series, lty = 1,
            pch = NA_integer_,
            inset = c(0,1), xpd = TRUE, horiz=TRUE, bty = "n")
     par(mai = c(0.0, 0.2, 0.2, 0.4))
-    ggdemetra::siratioplot(siratio_plot,main = NULL)
+    ggdemetra::siratioplot(siratio_plot, main = NULL)
     
     
     par(mai = c(0.4, 0.2, 0.2, 0))
+    par(mar = rep.int(0.4, 4))
     plot.new()
     # box()
-    legend("topleft", legend = c(NA,summary_text), 
-           bty = "n", text.font =  2, inset = c(0))
+    legend("topleft", legend = c(NA, summary_text), 
+           bty = "n", text.font =  2, inset = c(0),
+           cex = 0.95,
+           xpd = TRUE)
     
+    # plot.new()
+    # # box()
+    # legend("right", legend = c(arima_ord), 
+    #        bty = "n", text.font =  2, inset = c(0),
+    #        cex = 0.8)
     
     par(mar = rep(rep(2, 4)))
     par(mai = c(0, 0.2, 0, 0.2))
@@ -240,11 +260,28 @@ plot.simple_dashboard <- function(x, main = "Simple Dashboard",
                            decomp_stats$table, bty = "o", display.rownames = FALSE, hlines = TRUE,
                            vlines = TRUE,bg = decomp_stats$colors, xjust = 0.5, yjust = 1)
     
+    # Empty plot
+    plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1),
+         axes = FALSE)
+    
     plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1),
          axes = FALSE)
     par(mai = c(0, 0.2, 0.2, 0.2))
     
-    plotrix::addtable2plot(0.5, 0.6,
+    if(! is.null(outliers$table)) {
+        plotrix::addtable2plot(0.5, 0.7,
+                               outliers$table, 
+                               bg = outliers$colors,
+                               bty = "o", 
+                               display.rownames = FALSE, hlines = TRUE,
+                               vlines = TRUE, 
+                               xjust = 0.5, yjust = 0.5)
+    }
+    
+    plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1),
+         axes = FALSE)
+    par(mai = c(0, 0.2, 0.2, 0.2))
+    plotrix::addtable2plot(0.5, 0.8,
                            residuals_tests$table, bty = "o", 
                            display.rownames = TRUE, hlines = TRUE,
                            vlines = TRUE,
