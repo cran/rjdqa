@@ -1,6 +1,6 @@
-08a8132da75539fabe7eb6af89214f00 *DESCRIPTION
+143f1ce3fa3f471ab9d04903f87546c6 *DESCRIPTION
 1186e05da683d37e35e9e0dadcff78b2 *NAMESPACE
-1379be9733eb9568cd641ca50eb3423f *NEWS.md
+d1709e650c23b902ce0cc6bf0d13b1c6 *NEWS.md
 3d175b61cfedd70678815f60dd5ec4d0 *R/sc_d_moving_holiday.R
 cfde0a52f14598c49fc70054a65d2fe7 *R/sc_d_net_effects.R
 3b57905a61239a909aed9f12d62ddfff *R/sc_d_recent_history.R
@@ -8,10 +8,10 @@ b916ea9fa2e1da947759c585f953b1f6 *R/sc_d_seasonal.R
 77cc672f3658433dadc4ccf99a1165fe *R/sc_d_summary_diagnostics.R
 fd009faa47958b109b66fcb8259c8ebc *R/sc_d_trading_day.R
 91d85bd32397a90793175772426724eb *R/sc_dashboard.R
-d8954f251b71c765b640a9a781f6d6b1 *R/simple_dashboard.R
-983f35473f1a83f77ec2a93c3bf54f2b *R/simple_dashboard2.R
+70fecf9baffce5141b270f7985642104 *R/simple_dashboard.R
+25aba058eec1141fd53b5616c48c04af *R/simple_dashboard2.R
 255efb6d4f874a5e5fa1c5ef283afa7a *R/ts_utils.R
-0c8b9e90b5cf6bacd83426607a4b6bcc *README.md
+0eb457975e250cbae9761a5392a2c224 *README.md
 4a284217bcb1fff23b9b87ce6f026094 *man/figures/README-simple_dash-1.png
 fd2264613203fbe75a06a02e3063c391 *man/figures/README-simple_dash_out-1.png
 9c3e3fde8e5085eef217a2c1e9e0c0c1 *man/figures/README-stat_cana_dash-1.png
@@ -19,4 +19,4 @@ fd2264613203fbe75a06a02e3063c391 *man/figures/README-simple_dash_out-1.png
 d637bd696a0a483f6af56a041e67095d *man/plot.sc_dashboard.Rd
 1d1bb8f5fa234b1d0778ebfd3f6d371b *man/plot.simple_dashboard.Rd
 27722be1c3fac6a1648979b5c4e8f9dd *man/sc_dashboard.Rd
-6f165f17665a07ddfa7bc4080aaeedd0 *man/simple_dashboard.Rd
+644e54f6cce71bf017d194ec1aee4846 *man/simple_dashboard.Rd
